@@ -10,7 +10,7 @@ Open `index.html` in a browser. Until Supabase is configured, tasks continue to 
 
 1. Create a Supabase project in a region near Belgium. The Free plan can pause projects after inactivity, so it is not an uptime guarantee for reminders.
 2. In Authentication settings, disable public sign-ups and add the owner account from the dashboard. Set the site URL to `https://it-man23.github.io/Agenda/` and allow that URL as a redirect URL. Configure custom SMTP if the default Supabase email service cannot deliver sign-in links to the account.
-3. Run `supabase/migrations/202611020001_agenda.sql` in the Supabase SQL Editor.
+3. Run `supabase/migrations/202611020001_agenda.sql` and then `supabase/migrations/202611020002_disable_sms.sql` in the Supabase SQL Editor. The second migration makes email-only reminders the default and turns SMS off for existing rows.
 4. Copy the project URL and publishable key into `supabase-config.js`. The publishable key is intended for the browser; it is not a service-role secret. RLS policies protect all user data.
 5. Install the Supabase CLI, run `supabase login`, then link and deploy the function:
 
@@ -19,9 +19,11 @@ Open `index.html` in a browser. Until Supabase is configured, tasks continue to 
    supabase functions deploy send-task-reminders
    ```
 
-6. In the Supabase Edge Function secrets, configure these provider values:
+6. To use email reminders now, configure these Brevo values in the Supabase Edge Function secrets:
    - `BREVO_API_KEY`
    - `BREVO_SENDER_EMAIL` (must be verified in Brevo)
+
+  Twilio is optional for now. Leave the SMS toggle off in the app and do not add Twilio secrets until the recipient and sender numbers are accepted. To enable SMS later, configure:
    - `TWILIO_ACCOUNT_SID`
    - `TWILIO_AUTH_TOKEN`
    - `TWILIO_FROM_NUMBER`

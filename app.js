@@ -342,7 +342,7 @@
       byId("accountButton").textContent = "Connexion";
       byId("signOutButton").hidden = true;
       if (client) {
-        tasksByDate = {};
+        tasksByDate = readLocalTasks();
         render();
         byId("syncStatus").textContent = "Connexion requise";
         authBackdrop.hidden = false;
