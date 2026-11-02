@@ -115,10 +115,29 @@
     .form-actions { display: flex; justify-content: end; gap: 9px; margin-top: 22px; }
     .cancel-button { min-height: 42px; padding: 0 13px; border: 1px solid var(--line); border-radius: 7px; background: white; cursor: pointer; }
     .submit-button { min-height: 42px; padding: 0 15px; border: 0; border-radius: 7px; background: var(--green); color: white; cursor: pointer; font-weight: 700; }
+    .account-area { display: flex; align-items: center; gap: 10px; }
+    .sync-status { color: var(--muted); font-size: 11px; }
+    .account-button, .signout-button { min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--green); cursor: pointer; font-size: 12px; font-weight: 700; }
+    .signout-button { color: var(--muted); }
+    .app-notice { margin: -12px 0 22px; padding: 11px 13px; border: 1px solid #dfe6dc; border-radius: 7px; background: #edf3ec; color: #35553d; font-size: 13px; line-height: 1.5; }
+    .app-notice[data-kind="error"] { border-color: #efcfc4; background: #fbefeb; color: #874331; }
+    .app-notice[data-kind="success"] { border-color: #cfe0d1; background: #eaf3eb; color: #2f694f; }
+    .reminder-hint { color: var(--muted); font-size: 10px; }
+    .reminder-options { display: flex; flex-wrap: wrap; gap: 15px; margin: 3px 0 16px; padding: 0; border: 0; }
+    .reminder-options legend { margin-bottom: 9px; color: #566058; font-size: 12px; font-weight: 700; }
+    .reminder-options label { display: inline-flex; align-items: center; gap: 7px; color: #535d55; font-size: 12px; }
+    .reminder-options input { accent-color: var(--green); }
+    .dialog-note { margin: 13px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .dialog-status { min-height: 18px; margin: 12px 0 0; color: var(--green); font-size: 12px; }
+    .timezone-note { margin: -5px 0 15px; color: var(--muted); font-size: 12px; }
     @media (max-width: 700px) {
       .app-shell { width: min(100% - 28px, 540px); }
-      .topbar { min-height: 65px; }
-      .top-date { font-size: 11px; }
+      .topbar { min-height: 65px; gap: 8px; }
+      .brand { gap: 7px; font-size: 15px; }
+      .top-date { display: none; }
+      .account-area { gap: 5px; }
+      .sync-status { display: none; }
+      .account-button, .signout-button { padding: 0 6px; font-size: 10px; }
       main { padding: 32px 0 42px; }
       .intro { align-items: start; flex-direction: column; margin-bottom: 23px; }
       .add-button { min-height: 42px; }
@@ -138,7 +157,12 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark" aria-hidden="true">A</span> Agenda Steve</div>
-      <div class="top-date" id="topDate"></div>
+      <div class="account-area">
+        <span class="sync-status" id="syncStatus" aria-live="polite"></span>
+        <button class="account-button" id="accountButton" type="button">Connexion</button>
+        <button class="signout-button" id="signOutButton" type="button" hidden>Déconnexion</button>
+        <div class="top-date" id="topDate"></div>
+      </div>
     </header>
     <main>
       <section class="intro" aria-labelledby="pageTitle">
@@ -149,6 +173,7 @@
         </div>
         <button class="add-button" id="openDialog"><span aria-hidden="true">+</span> Ajouter une tâche</button>
       </section>
+      <p class="app-notice" id="appNotice" role="status" hidden></p>
       <div class="layout">
         <aside class="sidebar" aria-label="Résumé de la journée">
           <div class="date-nav">
@@ -191,140 +216,47 @@
           <div class="field"><label for="taskTime">Heure</label><input id="taskTime" name="time" type="time"></div>
           <div class="field"><label for="taskCategory">Catégorie</label><select id="taskCategory" name="category"><option value="work">Travail</option><option value="personal">Personnel</option><option value="home">Maison</option></select></div>
         </div>
+        <fieldset class="reminder-options">
+          <legend>Rappels · 1 minute avant</legend>
+          <label><input id="emailReminder" type="checkbox" checked> E-mail</label>
+          <label><input id="smsReminder" type="checkbox" checked> SMS</label>
+        </fieldset>
         <div class="form-actions"><button class="cancel-button" id="cancelDialog" type="button">Annuler</button><button class="submit-button" type="submit">Ajouter la tâche</button></div>
       </form>
     </section>
   </div>
 
-  <script>
-    (() => {
-      const storageKey = "le-fil-daily-tasks-v1";
-      const categoryNames = { work: "Travail", personal: "Personnel", home: "Maison" };
-      const today = new Date();
-      let viewedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      let activeFilter = "all";
-      let tasksByDate = {};
-      try { tasksByDate = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { tasksByDate = {}; }
+  <div class="modal-backdrop" id="authBackdrop" hidden>
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="dialog-header"><div><h2 id="authTitle">Connexion à l’agenda</h2><p>Un lien de connexion sera envoyé à ton adresse.</p></div></div>
+      <form id="loginForm">
+        <div class="field"><label for="loginEmail">Adresse e-mail</label><input id="loginEmail" name="email" type="email" autocomplete="email" required></div>
+        <div class="form-actions"><button class="submit-button" type="submit">Envoyer le lien</button></div>
+      </form>
+      <p class="dialog-status" id="loginMessage" role="status"></p>
+      <p class="dialog-note">L’accès est réservé aux comptes ajoutés dans le tableau de bord Supabase.</p>
+    </section>
+  </div>
 
-      const byId = (id) => document.getElementById(id);
-      const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const currentTasks = () => tasksByDate[dateKey(viewedDate)] || [];
-      const save = () => localStorage.setItem(storageKey, JSON.stringify(tasksByDate));
-      const dateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
-      const weekdayFormat = new Intl.DateTimeFormat("fr-FR", { weekday: "long", year: "numeric" });
-      const longDateFormat = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  <div class="modal-backdrop" id="settingsBackdrop" hidden>
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="dialog-header"><div><h2 id="settingsTitle">Préférences de rappel</h2><p>Les rappels partent une minute avant l’heure prévue.</p></div><button class="close-button" id="closeSettings" type="button" aria-label="Fermer">×</button></div>
+      <form id="settingsForm">
+        <div class="field"><label for="settingsEmail">Adresse e-mail</label><input id="settingsEmail" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="settingsPhone">Téléphone</label><input id="settingsPhone" type="tel" autocomplete="tel" placeholder="+32…"><span class="dialog-note">Format international requis. Le fournisseur SMS peut facturer les messages.</span></div>
+        <p class="timezone-note">Fuseau horaire détecté : <strong id="timezoneValue"></strong></p>
+        <fieldset class="reminder-options">
+          <legend>Canaux activés par défaut</legend>
+          <label><input id="emailEnabled" type="checkbox" checked> E-mail</label>
+          <label><input id="smsEnabled" type="checkbox" checked> SMS</label>
+        </fieldset>
+        <div class="form-actions"><button class="cancel-button" id="cancelSettings" type="button">Annuler</button><button class="submit-button" type="submit">Enregistrer</button></div>
+      </form>
+    </section>
+  </div>
 
-      if (!tasksByDate[dateKey(today)]) {
-        tasksByDate[dateKey(today)] = [
-          { id: crypto.randomUUID(), title: "Prendre un moment pour planifier la journée", category: "personal", time: "09:00", done: false },
-          { id: crypto.randomUUID(), title: "Traiter les priorités importantes", category: "work", time: "10:00", done: false },
-          { id: crypto.randomUUID(), title: "Faire une pause et prendre l’air", category: "personal", time: "12:30", done: false },
-          { id: crypto.randomUUID(), title: "Ranger un peu la maison", category: "home", time: "18:00", done: false }
-        ];
-        save();
-      }
-
-      function render() {
-        const tasks = currentTasks();
-        const doneCount = tasks.filter((task) => task.done).length;
-        const percent = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
-        byId("topDate").textContent = longDateFormat.format(today);
-        byId("selectedDate").textContent = dateFormat.format(viewedDate);
-        byId("selectedWeekday").textContent = weekdayFormat.format(viewedDate);
-        byId("progressPercent").textContent = `${percent}%`;
-        byId("progressCount").textContent = `${doneCount} tâche${doneCount > 1 ? "s" : ""} terminée${doneCount > 1 ? "s" : ""}`;
-        byId("progressFill").style.width = `${percent}%`;
-        byId("progressFill").parentElement.setAttribute("aria-valuenow", String(percent));
-        byId("progressNote").textContent = percent === 100 ? "Bravo, tu as tout accompli !" : percent > 0 ? "Tu avances bien, continue à ton rythme." : "Chaque petit pas compte.";
-        byId("taskCount").textContent = `${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`;
-        const visibleTasks = tasks.filter((task) => activeFilter === "all" || (activeFilter === "done" ? task.done : !task.done));
-        const list = byId("taskList");
-        list.replaceChildren();
-        byId("emptyState").hidden = visibleTasks.length > 0;
-        if (visibleTasks.length === 0) {
-          const noTasks = tasks.length === 0;
-          byId("emptyTitle").textContent = noTasks ? "Une journée toute neuve" : activeFilter === "active" ? "Tout est fait" : "Rien ici pour le moment";
-          byId("emptyMessage").textContent = noTasks ? "Ajoute une tâche pour commencer." : activeFilter === "active" ? "Profite de ce moment, tu l’as bien mérité." : "Les tâches terminées apparaîtront ici.";
-        }
-        visibleTasks.slice().sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99")).forEach((task, index) => {
-          const row = document.createElement("li");
-          row.className = `task-row${task.done ? " done" : ""}`;
-          row.style.animationDelay = `${Math.min(index * 35, 175)}ms`;
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.className = "task-check";
-          checkbox.checked = task.done;
-          checkbox.setAttribute("aria-label", `Marquer « ${task.title} » comme ${task.done ? "à faire" : "terminée"}`);
-          checkbox.addEventListener("change", () => updateTask(task.id, { done: checkbox.checked }));
-          const details = document.createElement("div");
-          const name = document.createElement("span");
-          name.className = "task-name";
-          name.textContent = task.title;
-          const meta = document.createElement("div");
-          meta.className = "task-meta";
-          const category = document.createElement("span");
-          category.className = `category ${task.category}`;
-          category.textContent = categoryNames[task.category] || "Personnel";
-          meta.append(category);
-          details.append(name, meta);
-          const time = document.createElement("time");
-          time.className = "task-time";
-          if (task.time) { time.textContent = task.time; time.setAttribute("datetime", task.time); }
-          const remove = document.createElement("button");
-          remove.type = "button";
-          remove.className = "delete-button";
-          remove.textContent = "×";
-          remove.setAttribute("aria-label", `Supprimer « ${task.title} »`);
-          remove.title = "Supprimer";
-          remove.addEventListener("click", () => deleteTask(task.id));
-          row.append(checkbox, details, time, remove);
-          list.append(row);
-        });
-        document.querySelectorAll(".filter-button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter)));
-      }
-
-      function updateTask(id, changes) {
-        tasksByDate[dateKey(viewedDate)] = currentTasks().map((task) => task.id === id ? { ...task, ...changes } : task);
-        save();
-        render();
-      }
-      function deleteTask(id) {
-        tasksByDate[dateKey(viewedDate)] = currentTasks().filter((task) => task.id !== id);
-        save();
-        render();
-      }
-      function shiftDate(amount) {
-        viewedDate.setDate(viewedDate.getDate() + amount);
-        render();
-      }
-      const backdrop = byId("modalBackdrop");
-      function openDialog() { backdrop.hidden = false; byId("taskTitle").focus(); }
-      function closeDialog() { backdrop.hidden = true; byId("taskForm").reset(); byId("openDialog").focus(); }
-
-      byId("openDialog").addEventListener("click", openDialog);
-      byId("closeDialog").addEventListener("click", closeDialog);
-      byId("cancelDialog").addEventListener("click", closeDialog);
-      backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeDialog(); });
-      document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !backdrop.hidden) closeDialog(); });
-      byId("previousDay").addEventListener("click", () => shiftDate(-1));
-      byId("nextDay").addEventListener("click", () => shiftDate(1));
-      byId("goToday").addEventListener("click", () => { viewedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()); render(); });
-      document.querySelectorAll(".filter-button").forEach((button) => button.addEventListener("click", () => { activeFilter = button.dataset.filter; render(); }));
-      byId("taskForm").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const title = String(formData.get("title") || "").trim();
-        if (!title) return;
-        const dateTasks = currentTasks();
-        dateTasks.push({ id: crypto.randomUUID(), title, time: String(formData.get("time") || ""), category: String(formData.get("category") || "personal"), done: false });
-        tasksByDate[dateKey(viewedDate)] = dateTasks;
-        save();
-        activeFilter = "all";
-        closeDialog();
-        render();
-      });
-      render();
-    })();
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

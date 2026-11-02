@@ -1,0 +1,4 @@
+project_id = "agenda-steve"
+
+[functions.send-task-reminders]
+verify_jwt = true
