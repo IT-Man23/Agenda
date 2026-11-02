@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f4ed">
+  <title>Agenda Steve — Mes tâches du jour</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f4ed;
+      --surface: #fffefa;
+      --ink: #202b25;
+      --muted: #788078;
+      --line: #e7e8df;
+      --green: #2f694f;
+      --green-soft: #e7f0e9;
+      --orange: #e77a4e;
+      --blue: #47758a;
+      --shadow: 0 16px 48px rgba(38, 48, 39, .07);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      font-size: 15px;
+    }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    .app-shell { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+    .topbar {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(32, 43, 37, .1);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 17px; font-weight: 700; letter-spacing: .2px; }
+    .brand-mark { width: 30px; height: 30px; display: grid; place-items: center; background: var(--green); color: white; border-radius: 9px; font-family: Georgia, serif; font-size: 20px; }
+    .top-date { color: var(--muted); font-size: 13px; }
+    main { padding: 46px 0 64px; }
+    .intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 32px; }
+    .eyebrow { margin: 0 0 9px; color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 5vw, 46px); font-weight: 400; letter-spacing: 0; line-height: 1.1; }
+    .subtitle { margin: 10px 0 0; color: var(--muted); }
+    .add-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 46px; padding: 0 17px; border: 0; border-radius: 8px; background: var(--green); color: #fff; cursor: pointer; font-weight: 700; transition: background .18s, transform .18s; }
+    .add-button:hover { background: #24543d; transform: translateY(-1px); }
+    .add-button span { font-size: 21px; font-weight: 400; line-height: 1; }
+    .layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: start; gap: 22px; }
+    .sidebar, .task-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+    .sidebar { padding: 23px 20px; }
+    .date-nav { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; gap: 7px; }
+    .icon-button { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; font-size: 19px; transition: background .15s; }
+    .icon-button:hover { background: var(--paper); }
+    .date-copy { text-align: center; }
+    .date-copy strong { display: block; font-size: 14px; }
+    .date-copy span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .today-button { display: block; margin: 13px auto 0; padding: 4px 8px; border: 0; background: transparent; color: var(--green); cursor: pointer; font-size: 12px; font-weight: 700; }
+    .progress-block { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .progress-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .progress-heading strong { font-family: Georgia, serif; font-size: 25px; font-weight: 400; }
+    .progress-heading span { color: var(--muted); font-size: 12px; }
+    .progress-track { height: 7px; margin-top: 13px; overflow: hidden; border-radius: 10px; background: #eceee8; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--green); transition: width .3s ease; }
+    .progress-note { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .legend { display: grid; gap: 12px; margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .legend-item { display: flex; align-items: center; gap: 9px; color: #535d55; font-size: 12px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.work { background: var(--blue); }
+    .dot.personal { background: var(--orange); }
+    .dot.home { background: #879a58; }
+    .task-panel { min-height: 430px; padding: 22px 24px; }
+    .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .panel-heading h2 { margin: 0; font-family: Georgia, serif; font-size: 22px; font-weight: 400; }
+    .task-count { color: var(--muted); font-size: 12px; }
+    .filters { display: flex; gap: 5px; margin: 16px 0 8px; }
+    .filter-button { padding: 8px 11px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+    .filter-button[aria-pressed="true"] { background: var(--green-soft); color: var(--green); font-weight: 700; }
+    .task-list { list-style: none; margin: 0; padding: 0; }
+    .task-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 28px; align-items: center; gap: 12px; min-height: 69px; border-bottom: 1px solid #eff0e9; animation: appear .24s ease both; }
+    @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .task-check { appearance: none; width: 20px; height: 20px; margin: 0; border: 1.5px solid #c9d0c8; border-radius: 50%; cursor: pointer; transition: .15s; }
+    .task-check:checked { display: grid; place-items: center; border-color: var(--green); background: var(--green); }
+    .task-check:checked::after { content: "✓"; color: white; font-size: 13px; }
+    .task-name { display: block; overflow-wrap: anywhere; font-size: 14px; line-height: 1.4; }
+    .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+    .category { font-size: 11px; }
+    .category.work { color: var(--blue); }
+    .category.personal { color: var(--orange); }
+    .category.home { color: #718642; }
+    .task-row.done .task-name { color: #98a098; text-decoration: line-through; }
+    .task-time { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    .delete-button { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: #a0a79f; cursor: pointer; font-size: 17px; opacity: .65; }
+    .delete-button:hover { background: #f8ece7; color: #b64e35; opacity: 1; }
+    .empty-state { padding: 65px 16px; text-align: center; }
+    .empty-mark { width: 42px; height: 42px; display: grid; place-items: center; margin: 0 auto 13px; border-radius: 50%; background: var(--green-soft); color: var(--green); font-size: 20px; }
+    .empty-state strong { display: block; font-family: Georgia, serif; font-size: 19px; font-weight: 400; }
+    .empty-state p { margin: 7px 0 0; color: var(--muted); font-size: 13px; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; padding: 20px; background: rgba(25, 34, 28, .42); }
+    .modal-backdrop[hidden] { display: none; }
+    .dialog { width: min(440px, 100%); padding: 26px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); box-shadow: 0 24px 80px rgba(18, 30, 21, .22); animation: appear .18s ease both; }
+    .dialog-header { display: flex; align-items: start; justify-content: space-between; margin-bottom: 21px; }
+    .dialog-header h2 { margin: 0; font-family: Georgia, serif; font-size: 25px; font-weight: 400; }
+    .dialog-header p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .close-button { width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 22px; }
+    .close-button:hover { background: var(--paper); }
+    .field { display: grid; gap: 7px; margin-bottom: 15px; }
+    .field label { color: #566058; font-size: 12px; font-weight: 700; }
+    .field input, .field select { width: 100%; min-height: 43px; padding: 0 11px; border: 1px solid #dfe2d9; border-radius: 7px; outline: none; background: white; color: var(--ink); }
+    .field input:focus, .field select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(47, 105, 79, .12); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-actions { display: flex; justify-content: end; gap: 9px; margin-top: 22px; }
+    .cancel-button { min-height: 42px; padding: 0 13px; border: 1px solid var(--line); border-radius: 7px; background: white; cursor: pointer; }
+    .submit-button { min-height: 42px; padding: 0 15px; border: 0; border-radius: 7px; background: var(--green); color: white; cursor: pointer; font-weight: 700; }
+    @media (max-width: 700px) {
+      .app-shell { width: min(100% - 28px, 540px); }
+      .topbar { min-height: 65px; }
+      .top-date { font-size: 11px; }
+      main { padding: 32px 0 42px; }
+      .intro { align-items: start; flex-direction: column; margin-bottom: 23px; }
+      .add-button { min-height: 42px; }
+      .layout { grid-template-columns: 1fr; gap: 14px; }
+      .sidebar { padding: 17px; }
+      .progress-block { margin-top: 18px; padding-top: 16px; }
+      .legend { grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 17px; padding-top: 15px; }
+      .legend-item { gap: 6px; font-size: 11px; }
+      .task-panel { min-height: 340px; padding: 18px 15px; }
+      .task-row { grid-template-columns: 22px minmax(0, 1fr) auto 26px; gap: 8px; }
+      .task-time { font-size: 11px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">A</span> Agenda Steve</div>
+      <div class="top-date" id="topDate"></div>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow">Un jour à la fois</p>
+          <h1 id="pageTitle">Mes tâches du jour</h1>
+          <p class="subtitle">Fais de la place pour l’essentiel.</p>
+        </div>
+        <button class="add-button" id="openDialog"><span aria-hidden="true">+</span> Ajouter une tâche</button>
+      </section>
+      <div class="layout">
+        <aside class="sidebar" aria-label="Résumé de la journée">
+          <div class="date-nav">
+            <button class="icon-button" id="previousDay" type="button" aria-label="Jour précédent" title="Jour précédent">‹</button>
+            <div class="date-copy"><strong id="selectedDate"></strong><span id="selectedWeekday"></span></div>
+            <button class="icon-button" id="nextDay" type="button" aria-label="Jour suivant" title="Jour suivant">›</button>
+          </div>
+          <button class="today-button" id="goToday" type="button">Revenir à aujourd’hui</button>
+          <div class="progress-block">
+            <div class="progress-heading"><strong id="progressPercent">0%</strong><span id="progressCount">0 tâche terminée</span></div>
+            <div class="progress-track" role="progressbar" aria-label="Progression des tâches" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="progress-fill" id="progressFill"></div></div>
+            <p class="progress-note" id="progressNote">Chaque petit pas compte.</p>
+          </div>
+          <div class="legend" aria-label="Catégories">
+            <div class="legend-item"><span class="dot work"></span>Travail</div>
+            <div class="legend-item"><span class="dot personal"></span>Personnel</div>
+            <div class="legend-item"><span class="dot home"></span>Maison</div>
+          </div>
+        </aside>
+        <section class="task-panel" aria-labelledby="listHeading">
+          <div class="panel-heading"><h2 id="listHeading">Ma journée</h2><span class="task-count" id="taskCount"></span></div>
+          <div class="filters" role="group" aria-label="Filtrer les tâches">
+            <button class="filter-button" type="button" data-filter="all" aria-pressed="true">Toutes</button>
+            <button class="filter-button" type="button" data-filter="active" aria-pressed="false">À faire</button>
+            <button class="filter-button" type="button" data-filter="done" aria-pressed="false">Terminées</button>
+          </div>
+          <ul class="task-list" id="taskList"></ul>
+          <div class="empty-state" id="emptyState" hidden><span class="empty-mark" aria-hidden="true">✓</span><strong id="emptyTitle">Tout est à jour</strong><p id="emptyMessage">Profite de ce moment, tu l’as bien mérité.</p></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+      <div class="dialog-header"><div><h2 id="dialogTitle">Nouvelle tâche</h2><p>Note ce que tu veux accomplir.</p></div><button class="close-button" id="closeDialog" type="button" aria-label="Fermer">×</button></div>
+      <form id="taskForm">
+        <div class="field"><label for="taskTitle">Tâche</label><input id="taskTitle" name="title" type="text" placeholder="Ex. Préparer la réunion" maxlength="100" required></div>
+        <div class="field-row">
+          <div class="field"><label for="taskTime">Heure</label><input id="taskTime" name="time" type="time"></div>
+          <div class="field"><label for="taskCategory">Catégorie</label><select id="taskCategory" name="category"><option value="work">Travail</option><option value="personal">Personnel</option><option value="home">Maison</option></select></div>
+        </div>
+        <div class="form-actions"><button class="cancel-button" id="cancelDialog" type="button">Annuler</button><button class="submit-button" type="submit">Ajouter la tâche</button></div>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const storageKey = "le-fil-daily-tasks-v1";
+      const categoryNames = { work: "Travail", personal: "Personnel", home: "Maison" };
+      const today = new Date();
+      let viewedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      let activeFilter = "all";
+      let tasksByDate = {};
+      try { tasksByDate = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { tasksByDate = {}; }
+
+      const byId = (id) => document.getElementById(id);
+      const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const currentTasks = () => tasksByDate[dateKey(viewedDate)] || [];
+      const save = () => localStorage.setItem(storageKey, JSON.stringify(tasksByDate));
+      const dateFormat = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long" });
+      const weekdayFormat = new Intl.DateTimeFormat("fr-FR", { weekday: "long", year: "numeric" });
+      const longDateFormat = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
+      if (!tasksByDate[dateKey(today)]) {
+        tasksByDate[dateKey(today)] = [
+          { id: crypto.randomUUID(), title: "Prendre un moment pour planifier la journée", category: "personal", time: "09:00", done: false },
+          { id: crypto.randomUUID(), title: "Traiter les priorités importantes", category: "work", time: "10:00", done: false },
+          { id: crypto.randomUUID(), title: "Faire une pause et prendre l’air", category: "personal", time: "12:30", done: false },
+          { id: crypto.randomUUID(), title: "Ranger un peu la maison", category: "home", time: "18:00", done: false }
+        ];
+        save();
+      }
+
+      function render() {
+        const tasks = currentTasks();
+        const doneCount = tasks.filter((task) => task.done).length;
+        const percent = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
+        byId("topDate").textContent = longDateFormat.format(today);
+        byId("selectedDate").textContent = dateFormat.format(viewedDate);
+        byId("selectedWeekday").textContent = weekdayFormat.format(viewedDate);
+        byId("progressPercent").textContent = `${percent}%`;
+        byId("progressCount").textContent = `${doneCount} tâche${doneCount > 1 ? "s" : ""} terminée${doneCount > 1 ? "s" : ""}`;
+        byId("progressFill").style.width = `${percent}%`;
+        byId("progressFill").parentElement.setAttribute("aria-valuenow", String(percent));
+        byId("progressNote").textContent = percent === 100 ? "Bravo, tu as tout accompli !" : percent > 0 ? "Tu avances bien, continue à ton rythme." : "Chaque petit pas compte.";
+        byId("taskCount").textContent = `${tasks.length} tâche${tasks.length > 1 ? "s" : ""}`;
+        const visibleTasks = tasks.filter((task) => activeFilter === "all" || (activeFilter === "done" ? task.done : !task.done));
+        const list = byId("taskList");
+        list.replaceChildren();
+        byId("emptyState").hidden = visibleTasks.length > 0;
+        if (visibleTasks.length === 0) {
+          const noTasks = tasks.length === 0;
+          byId("emptyTitle").textContent = noTasks ? "Une journée toute neuve" : activeFilter === "active" ? "Tout est fait" : "Rien ici pour le moment";
+          byId("emptyMessage").textContent = noTasks ? "Ajoute une tâche pour commencer." : activeFilter === "active" ? "Profite de ce moment, tu l’as bien mérité." : "Les tâches terminées apparaîtront ici.";
+        }
+        visibleTasks.slice().sort((a, b) => (a.time || "99:99").localeCompare(b.time || "99:99")).forEach((task, index) => {
+          const row = document.createElement("li");
+          row.className = `task-row${task.done ? " done" : ""}`;
+          row.style.animationDelay = `${Math.min(index * 35, 175)}ms`;
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "task-check";
+          checkbox.checked = task.done;
+          checkbox.setAttribute("aria-label", `Marquer « ${task.title} » comme ${task.done ? "à faire" : "terminée"}`);
+          checkbox.addEventListener("change", () => updateTask(task.id, { done: checkbox.checked }));
+          const details = document.createElement("div");
+          const name = document.createElement("span");
+          name.className = "task-name";
+          name.textContent = task.title;
+          const meta = document.createElement("div");
+          meta.className = "task-meta";
+          const category = document.createElement("span");
+          category.className = `category ${task.category}`;
+          category.textContent = categoryNames[task.category] || "Personnel";
+          meta.append(category);
+          details.append(name, meta);
+          const time = document.createElement("time");
+          time.className = "task-time";
+          if (task.time) { time.textContent = task.time; time.setAttribute("datetime", task.time); }
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "delete-button";
+          remove.textContent = "×";
+          remove.setAttribute("aria-label", `Supprimer « ${task.title} »`);
+          remove.title = "Supprimer";
+          remove.addEventListener("click", () => deleteTask(task.id));
+          row.append(checkbox, details, time, remove);
+          list.append(row);
+        });
+        document.querySelectorAll(".filter-button").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.filter === activeFilter)));
+      }
+
+      function updateTask(id, changes) {
+        tasksByDate[dateKey(viewedDate)] = currentTasks().map((task) => task.id === id ? { ...task, ...changes } : task);
+        save();
+        render();
+      }
+      function deleteTask(id) {
+        tasksByDate[dateKey(viewedDate)] = currentTasks().filter((task) => task.id !== id);
+        save();
+        render();
+      }
+      function shiftDate(amount) {
+        viewedDate.setDate(viewedDate.getDate() + amount);
+        render();
+      }
+      const backdrop = byId("modalBackdrop");
+      function openDialog() { backdrop.hidden = false; byId("taskTitle").focus(); }
+      function closeDialog() { backdrop.hidden = true; byId("taskForm").reset(); byId("openDialog").focus(); }
+
+      byId("openDialog").addEventListener("click", openDialog);
+      byId("closeDialog").addEventListener("click", closeDialog);
+      byId("cancelDialog").addEventListener("click", closeDialog);
+      backdrop.addEventListener("click", (event) => { if (event.target === backdrop) closeDialog(); });
+      document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !backdrop.hidden) closeDialog(); });
+      byId("previousDay").addEventListener("click", () => shiftDate(-1));
+      byId("nextDay").addEventListener("click", () => shiftDate(1));
+      byId("goToday").addEventListener("click", () => { viewedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()); render(); });
+      document.querySelectorAll(".filter-button").forEach((button) => button.addEventListener("click", () => { activeFilter = button.dataset.filter; render(); }));
+      byId("taskForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const title = String(formData.get("title") || "").trim();
+        if (!title) return;
+        const dateTasks = currentTasks();
+        dateTasks.push({ id: crypto.randomUUID(), title, time: String(formData.get("time") || ""), category: String(formData.get("category") || "personal"), done: false });
+        tasksByDate[dateKey(viewedDate)] = dateTasks;
+        save();
+        activeFilter = "all";
+        closeDialog();
+        render();
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
