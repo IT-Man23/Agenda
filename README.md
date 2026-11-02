@@ -12,7 +12,14 @@ Open `index.html` in a browser. Until Supabase is configured, tasks continue to 
 2. In Authentication settings, disable public sign-ups and add the owner account from the dashboard. Set the site URL to `https://it-man23.github.io/Agenda/` and allow that URL as a redirect URL. Configure custom SMTP if the default Supabase email service cannot deliver sign-in links to the account.
 3. Run `supabase/migrations/202611020001_agenda.sql` and then `supabase/migrations/202611020002_disable_sms.sql` in the Supabase SQL Editor. The second migration makes email-only reminders the default and turns SMS off for existing rows.
 4. Copy the project URL and publishable key into `supabase-config.js`. The publishable key is intended for the browser; it is not a service-role secret. RLS policies protect all user data.
-5. Install the Supabase CLI, run `supabase login`, then link and deploy the function:
+5. Deploy the reminder function using GitHub Actions (no local CLI required):
+
+  - In the GitHub repository, open **Settings → Secrets and variables → Actions**.
+  - Add the secret `SUPABASE_ACCESS_TOKEN` with a newly created Supabase personal access token. Do not reuse a token shared in chat.
+  - Add the variable `SUPABASE_PROJECT_REF` with the project reference from Supabase.
+  - Open **Actions → Deploy Supabase reminders → Run workflow**.
+
+  Alternatively, install the Supabase CLI, run `supabase login`, then link and deploy the function:
 
    ```powershell
    supabase link --project-ref YOUR_PROJECT_REF
