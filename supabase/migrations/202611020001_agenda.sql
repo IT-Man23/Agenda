@@ -3,7 +3,7 @@ create table if not exists public.notification_settings (
   email_to text not null,
   phone_to text,
   email_enabled boolean not null default true,
-  sms_enabled boolean not null default true,
+  sms_enabled boolean not null default false,
   timezone_name text not null default 'UTC',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -20,7 +20,7 @@ create table if not exists public.tasks (
   timezone_name text not null default 'UTC',
   completed boolean not null default false,
   email_reminder boolean not null default true,
-  sms_reminder boolean not null default true,
+  sms_reminder boolean not null default false,
   reminder_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),

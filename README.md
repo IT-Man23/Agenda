@@ -51,7 +51,7 @@ Open `index.html` in a browser. Until Supabase is configured, tasks continue to 
 
 ## Reminder behavior
 
-Tasks with an hour have email and SMS reminders enabled by default. Each reminder is scheduled for one minute before the task. Supabase Cron runs once per minute, so delivery is approximate, not guaranteed to the second. The function retries reported provider failures up to three attempts and records delivery status to prevent concurrent sends. If a provider accepts a message immediately before the function crashes, a later recovery attempt can still produce a duplicate; exactly-once delivery cannot be guaranteed across independent providers. Tasks already due when created do not receive a reminder.
+Tasks with an hour have email reminders enabled by default. SMS reminders are disabled by default until the recipient number and Twilio sender have been verified. Each enabled reminder is scheduled for one minute before the task. Supabase Cron runs once per minute, so delivery is approximate, not guaranteed to the second. The function retries reported provider failures up to three attempts and records delivery status to prevent concurrent sends. If a provider accepts a message immediately before the function crashes, a later recovery attempt can still produce a duplicate; exactly-once delivery cannot be guaranteed across independent providers. Tasks already due when created do not receive a reminder.
 
 SMS delivery is billed separately by Twilio; trial accounts may only send to verified recipient numbers. Verify sender and recipient eligibility before relying on alerts. Supabase Free projects may pause after inactivity, which can interrupt scheduled reminders.
 

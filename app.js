@@ -71,7 +71,7 @@
           timezone_name: timezoneName,
           completed: Boolean(task.done),
           email_reminder: task.emailReminder !== false,
-          sms_reminder: task.smsReminder !== false,
+          sms_reminder: task.smsReminder === true,
         });
       }
     }
@@ -106,7 +106,7 @@
       email_to: user.email,
       phone_to: null,
       email_enabled: true,
-      sms_enabled: true,
+      sms_enabled: false,
       timezone_name: timezoneName,
     };
     const { data: created, error: insertError } = await client
@@ -276,7 +276,7 @@
     taskBackdrop.hidden = true;
     byId("taskForm").reset();
     byId("emailReminder").checked = true;
-    byId("smsReminder").checked = true;
+    byId("smsReminder").checked = false;
     byId("openDialog").focus();
   }
 
